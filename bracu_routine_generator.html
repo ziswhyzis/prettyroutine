@@ -1,0 +1,1667 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BRACU Routine Generator</title>
+  <script>
+    /* Apply the saved colour theme before first paint (no flash). Key must match THEME_KEY below. */
+    try { var t = localStorage.getItem('bracu-routine-generator-theme-v1'); if (t) document.documentElement.dataset.theme = t; } catch (e) { }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    /* =====================================================================
+       COLOUR THEMES
+       Every colour on the page comes from CSS variables. The shared block below
+       holds sizes, fonts and colours common to all themes; each theme block after
+       it is selected by <html data-theme="...">. To add or tweak a theme, copy a
+       block and edit its values. The grid colour of the background pattern lives in
+       --pattern (an SVG can't read variables, so it is repeated inside each theme).
+       ===================================================================== */
+    :root {
+      /* sizes */
+      --th-font: 16px;
+      --th-height: 48px;
+      --time-font: 16px;
+      --code-font: 15px;
+      --meta-font: 12px;
+      --used-row-h: 86px;
+      --empty-row-h: 52px;
+
+      /* fonts */
+      --ui-font: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+      --routine-font: var(--ui-font);
+
+      /* shared colours */
+      --accent-ink: #FFFFFF;
+      --shadow-lg: 0 18px 50px rgba(40, 30, 20, .28);
+
+      /* status + feedback */
+      --err-bg: #F8E6E1;
+      --err-line: #E2B3A8;
+      --err-ink: #8A3B32;
+      --danger-bg: #F3DAD2;
+      --danger-ink: #9C4538;
+      --clash: #C9524A;
+      --clash-ink: #9E3B34;
+
+      /* Student Tutor (ST) cards: greige */
+      --st-fill: #CBC4B6;
+      --st-border: #8F887A;
+      --st-ink: #3A362F;
+
+      /* consultation-slot picker buttons */
+      --done: #488259;
+      --done-hover: #427852;
+      --cancel: #AF5B53;
+      --cancel-hover: #A1544C
+    }
+
+    /* Antique Paper & Ink (default) */
+    :root,
+    :root[data-theme="antique"] {
+      --bg: #F2E8D5;
+      --surface: #FFF9EA;
+      --surface-soft: #FAF1DC;
+      --line: #D9C7A2;
+      --line-soft: #E6D9BC;
+      --shadow: 3px 3px 0 rgba(90, 70, 40, .08);
+      --overlay: rgba(42, 33, 29, .34);
+      --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 128 128'%3E%3Cg fill='none' stroke='%236A5C55' stroke-opacity='.075' stroke-width='1'%3E%3Cpath d='M.5 0V128M0 .5H128'/%3E%3Cpath d='M0 0L128 128M128 0L0 128'/%3E%3C/g%3E%3C/svg%3E");
+      --ink: #3A2F29;
+      --ink-strong: #2A211D;
+      --muted: #6E5F52;
+      --accent: #6A5C55;
+      --focus-ring: #E3D4B6;
+      --grid-head: #6A5C55;
+      --grid-head-line: #8D7F72;
+      --grid-time: #7A6A5E;
+      --grid-bg: #EFE2C6;
+      --grid-cell: #F8EEDA;
+      --grid-line: #D8C6A3;
+      --exam-bg: #F6ECD6;
+      --mid-bg: #EFE0C0;
+      --mid-ink: #5B4A3A;
+      --mid-line: #CDB78F;
+      --final-bg: #E6DDD2;
+      --final-ink: #5A4A4A;
+      --final-line: #C9BBAF;
+      --ok-bg: #EEF0DC;
+      --ok-line: #C5CCA0;
+      --ok-ink: #4A5A2A
+    }
+
+    /* Sage & Teal Study */
+    :root[data-theme="sage"] {
+      --bg: #F3EBDD;
+      --surface: #FCF8EE;
+      --surface-soft: #F4F1E3;
+      --line: #CFD2B8;
+      --line-soft: #E0E2CD;
+      --shadow: 3px 3px 0 rgba(60, 90, 80, .08);
+      --overlay: rgba(36, 64, 67, .32);
+      --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 128 128'%3E%3Cg fill='none' stroke='%2346747A' stroke-opacity='.075' stroke-width='1'%3E%3Cpath d='M.5 0V128M0 .5H128'/%3E%3Cpath d='M0 0L128 128M128 0L0 128'/%3E%3C/g%3E%3C/svg%3E");
+      --ink: #2F4748;
+      --ink-strong: #244043;
+      --muted: #52675F;
+      --accent: #46747A;
+      --focus-ring: #D5E2DC;
+      --grid-head: #46747A;
+      --grid-head-line: #7FA0A3;
+      --grid-time: #4D7B81;
+      --grid-bg: #E6E9D6;
+      --grid-cell: #F3F3E4;
+      --grid-line: #C5CCB0;
+      --exam-bg: #EEF1E0;
+      --mid-bg: #DCE8E3;
+      --mid-ink: #2F5A5E;
+      --mid-line: #AFC7C2;
+      --final-bg: #F0E2E0;
+      --final-ink: #7A4547;
+      --final-line: #D9B8B8;
+      --ok-bg: #E6EFDD;
+      --ok-line: #B5CBA2;
+      --ok-ink: #3F5F30
+    }
+
+    /* Oatmilk & Terracotta */
+    :root[data-theme="terracotta"] {
+      --bg: #F8EBD2;
+      --surface: #FFF8EA;
+      --surface-soft: #FBEFDA;
+      --line: #E0CBA8;
+      --line-soft: #EBDABD;
+      --shadow: 3px 3px 0 rgba(120, 70, 40, .08);
+      --overlay: rgba(51, 32, 27, .34);
+      --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 128 128'%3E%3Cg fill='none' stroke='%23A85D3B' stroke-opacity='.075' stroke-width='1'%3E%3Cpath d='M.5 0V128M0 .5H128'/%3E%3Cpath d='M0 0L128 128M128 0L0 128'/%3E%3C/g%3E%3C/svg%3E");
+      --ink: #3E2A24;
+      --ink-strong: #33201B;
+      --muted: #7A5C4A;
+      --accent: #A85D3B;
+      --focus-ring: #F0D9C2;
+      --grid-head: #A85D3B;
+      --grid-head-line: #C58466;
+      --grid-time: #A86444;
+      --grid-bg: #F1DFC3;
+      --grid-cell: #FAF0DC;
+      --grid-line: #E0C7A2;
+      --exam-bg: #F8EAD2;
+      --mid-bg: #F3DEC4;
+      --mid-ink: #7A4025;
+      --mid-line: #DDB894;
+      --final-bg: #EBDDD0;
+      --final-ink: #5A3E36;
+      --final-line: #D0B8A8;
+      --ok-bg: #EFF0D8;
+      --ok-line: #CAD0A0;
+      --ok-ink: #55602A
+    }
+
+    /* Burgundy Heritage */
+    :root[data-theme="burgundy"] {
+      --bg: #F7EEDA;
+      --surface: #FEF9EC;
+      --surface-soft: #FAF1DE;
+      --line: #E2D2B1;
+      --line-soft: #ECDFC4;
+      --shadow: 3px 3px 0 rgba(100, 40, 40, .08);
+      --overlay: rgba(74, 14, 23, .34);
+      --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 128 128'%3E%3Cg fill='none' stroke='%237B1E2E' stroke-opacity='.075' stroke-width='1'%3E%3Cpath d='M.5 0V128M0 .5H128'/%3E%3Cpath d='M0 0L128 128M128 0L0 128'/%3E%3C/g%3E%3C/svg%3E");
+      --ink: #3B2024;
+      --ink-strong: #4A0E17;
+      --muted: #785E59;
+      --accent: #7B1E2E;
+      --focus-ring: #EBD3CF;
+      --grid-head: #7B1E2E;
+      --grid-head-line: #A5535F;
+      --grid-time: #8C3544;
+      --grid-bg: #F0E3CA;
+      --grid-cell: #F9F0DD;
+      --grid-line: #DDCAA6;
+      --exam-bg: #F6EBD4;
+      --mid-bg: #F1E0C4;
+      --mid-ink: #6A3A22;
+      --mid-line: #D8BC95;
+      --final-bg: #EEDCDC;
+      --final-ink: #6A1E2B;
+      --final-line: #D4AEB2;
+      --ok-bg: #EEF0DC;
+      --ok-line: #C8CFA2;
+      --ok-ink: #4D5A2A
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html {
+      -webkit-font-smoothing: antialiased
+    }
+
+    body {
+      margin: 0;
+      background-color: var(--bg);
+      /* Geometric backdrop: one 128px SVG tile (grid + both diagonals) repeated by the browser.
+         Static: no animation, no JS. Its colour comes from the active theme's --pattern. */
+      background-image: var(--pattern);
+      background-size: 128px 128px;
+      background-repeat: repeat;
+      color: var(--ink);
+      font: 14px/1.35 var(--ui-font);
+      letter-spacing: -.025em
+    }
+
+    a {
+      color: var(--accent)
+    }
+
+    button,
+    input,
+    select {
+      font: inherit
+    }
+
+    button {
+      cursor: pointer
+    }
+
+    .app {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 12px
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      box-shadow: var(--shadow)
+    }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 16px;
+      margin-bottom: 12px;
+      border-radius: 6px
+    }
+
+    .brand {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--ink-strong);
+      margin-right: 8px;
+      letter-spacing: -.04em
+    }
+
+    .meta {
+      color: var(--muted)
+    }
+
+    .meta strong {
+      color: var(--ink-strong)
+    }
+
+    .top-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .updated {
+      font-size: 11px;
+      color: var(--muted);
+      margin-left: 5px
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--ink-strong);
+      font-weight: 750;
+      padding: 8px 11px;
+      box-shadow: 1px 1px 0 rgba(40, 30, 20, .06)
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      color: var(--accent-ink);
+      border-color: var(--accent)
+    }
+
+    .btn:disabled {
+      opacity: .45;
+      cursor: not-allowed
+    }
+
+    .theme-switch {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-left: 8px
+    }
+
+    .theme-label {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted)
+    }
+
+    .theme-box {
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border-radius: 5px;
+      border: 1.5px solid var(--surface);
+      background: var(--sw);
+      box-shadow: 0 0 0 1px var(--line);
+      transition: transform .1s ease
+    }
+
+    .theme-box:hover {
+      transform: translateY(-1px)
+    }
+
+    .theme-box[aria-pressed="true"] {
+      box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink-strong)
+    }
+
+    .theme-box:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 4px
+    }
+
+    .status {
+      padding: 9px 12px;
+      margin-bottom: 12px;
+      border-radius: 5px;
+      border: 1px solid var(--line);
+      background: var(--surface-soft);
+      color: var(--ink)
+    }
+
+    .status.error {
+      border-color: var(--err-line);
+      background: var(--err-bg);
+      color: var(--err-ink)
+    }
+
+    .status.ok {
+      border-color: var(--ok-line);
+      background: var(--ok-bg);
+      color: var(--ok-ink)
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 285px minmax(0, 1fr);
+      gap: 12px;
+      align-items: start
+    }
+
+    .sidebar {
+      padding: 15px;
+      position: sticky;
+      top: 10px;
+      max-height: calc(100vh - 20px);
+      overflow-y: auto
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 850;
+      color: var(--ink-strong);
+      margin: 0 0 10px
+    }
+
+    .helper {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0 0 12px
+    }
+
+    .field-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+      margin: 12px 0 5px
+    }
+
+    .control {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 10px;
+      background: var(--surface);
+      color: var(--ink);
+      outline: none
+    }
+
+    .control:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--focus-ring)
+    }
+
+    .suggestions {
+      display: none;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: var(--surface);
+      max-height: 230px;
+      overflow: auto;
+      margin-top: 5px
+    }
+
+    .suggestions.open {
+      display: block
+    }
+
+    .suggestion {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: 0;
+      border-bottom: 1px solid var(--line-soft);
+      background: var(--surface);
+      padding: 9px 10px;
+      color: var(--ink)
+    }
+
+    .suggestion:hover {
+      background: var(--surface-soft)
+    }
+
+    .suggestion strong {
+      display: block
+    }
+
+    .suggestion small {
+      color: var(--muted)
+    }
+
+    .section-option {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--line-soft);
+      font-size: 12px
+    }
+
+    .selected-list {
+      margin-top: 13px;
+      border-top: 1px solid var(--line-soft);
+      padding-top: 11px
+    }
+
+    .selected-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid var(--line);
+      background: var(--surface-soft);
+      border-radius: 4px;
+      padding: 8px;
+      margin: 6px 0
+    }
+
+    .selected-copy {
+      min-width: 0;
+      flex: 1
+    }
+
+    .selected-copy strong {
+      display: block;
+      color: var(--ink-strong)
+    }
+
+    .selected-copy small {
+      color: var(--muted)
+    }
+
+    .remove {
+      border: 0;
+      border-radius: 3px;
+      background: var(--danger-bg);
+      color: var(--danger-ink);
+      font-weight: 900;
+      padding: 4px 8px
+    }
+
+    .sidebar-footer {
+      margin-top: 13px;
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap
+    }
+
+    .hidden {
+      display: none !important
+    }
+
+    .routine-panel,
+    .exam-wrap {
+      font-family: var(--routine-font)
+    }
+
+    .routine-panel {
+      overflow: hidden
+    }
+
+    .routine-head {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      flex-wrap: wrap;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line-soft);
+      min-height: 60px
+    }
+
+    .routine-stat {
+      color: var(--muted);
+      white-space: nowrap;
+      font-size: 13px
+    }
+
+    .routine-stat strong {
+      color: var(--ink-strong);
+      font-weight: 800
+    }
+
+    .table-wrap {
+      padding: 10px 10px 12px;
+      overflow-x: auto
+    }
+
+    .timetable {
+      width: 100%;
+      min-width: 1060px;
+      border-collapse: collapse;
+      table-layout: fixed;
+      background: var(--grid-bg);
+      font-family: var(--routine-font);
+      letter-spacing: -.03em
+    }
+
+    .timetable th {
+      height: var(--th-height);
+      background: var(--grid-head);
+      color: #fff;
+      font-size: var(--th-font);
+      line-height: 1.1;
+      padding: 0 2px;
+      border: 1px solid var(--grid-head-line);
+      text-align: center;
+      font-weight: 800;
+      letter-spacing: -.04em;
+      white-space: nowrap;
+      overflow: hidden
+    }
+
+    .timetable td {
+      border: 1px solid var(--grid-line);
+      vertical-align: middle;
+      padding: 6px;
+      background: var(--grid-cell)
+    }
+
+    .timetable tr.used-row td {
+      box-sizing: content-box;
+      height: var(--used-row-h);
+      padding: 5px
+    }
+
+    .timetable tr.empty-row td {
+      box-sizing: content-box;
+      height: var(--empty-row-h);
+      padding: 3px
+    }
+
+    .timetable td.time {
+      background: var(--grid-time);
+      border-color: var(--grid-head-line);
+      color: #fff;
+      text-align: center;
+      font-size: var(--time-font);
+      font-weight: 800;
+      white-space: nowrap;
+      padding: 6px 3px;
+      letter-spacing: -.045em
+    }
+
+    .event {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border: 2px solid var(--course);
+      background: var(--tint);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin: 0 0 5px;
+      font-size: 12px;
+      line-height: 1.25;
+      overflow: hidden;
+      box-shadow: none
+    }
+
+    .event:only-child {
+      min-height: var(--used-row-h)
+    }
+
+    .event:last-child {
+      margin-bottom: 0
+    }
+
+    .event.lab {
+      border-style: dashed
+    }
+
+    /* ST cards reuse .event (and .event.lab => dashed border); only the colours differ */
+    .event.st {
+      --course: var(--st-border);
+      --tint: var(--st-fill);
+      --text: var(--st-ink)
+    }
+
+    .course-legend {
+      margin-left: auto;
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink)
+    }
+
+    .course-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap
+    }
+
+    .course-swatch {
+      display: inline-block;
+      width: 20px;
+      height: 18px;
+      border-radius: 4px;
+      border: 2.5px solid var(--course);
+      background: var(--tint)
+    }
+
+    .course-swatch.st-swatch {
+      --course: var(--st-border);
+      --tint: var(--st-fill)
+    }
+
+    .event-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 6px
+    }
+
+    .event-head {
+      flex: 1;
+      min-width: 0;
+      font-weight: 800;
+      font-size: var(--code-font);
+      letter-spacing: -.04em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .event-type {
+      flex: none;
+      border: 1.5px solid currentColor;
+      background: var(--surface);
+      padding: 0 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      letter-spacing: .05em;
+      font-weight: 800;
+      line-height: 1.5
+    }
+
+    .event-meta {
+      font-family: var(--routine-font);
+      font-size: var(--meta-font);
+      font-weight: 600;
+      line-height: 1.3;
+      overflow-wrap: anywhere
+    }
+
+    .event .room {
+      margin-top: 2px
+    }
+
+    .clash {
+      border-color: var(--clash) !important;
+      box-shadow: 0 0 0 1px var(--clash)
+    }
+
+    .clash-note {
+      color: var(--clash-ink);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 0 15px 10px
+    }
+
+    .empty-state {
+      padding: 65px 20px;
+      text-align: center;
+      color: var(--muted)
+    }
+
+    .empty-state .icon {
+      font-size: 34px;
+      margin-bottom: 8px
+    }
+
+    .empty-state strong {
+      display: block;
+      color: var(--ink-strong);
+      font-size: 18px;
+      margin-bottom: 5px
+    }
+
+    .exam-wrap {
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--exam-bg);
+      border: 1px solid var(--line);
+      border-radius: 7px
+    }
+
+    .exam-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      padding: 14px 18px;
+      font-weight: 850;
+      color: var(--ink-strong);
+      font-size: 18px;
+      min-height: 52px
+    }
+
+    .exam-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 12px
+    }
+
+    .exam-card {
+      background: var(--surface);
+      border: 1px solid var(--mid-line);
+      border-radius: 7px;
+      overflow: hidden
+    }
+
+    .exam-card.final {
+      border-color: var(--final-line)
+    }
+
+    .exam-card-title {
+      background: var(--mid-bg);
+      color: var(--mid-ink);
+      font-weight: 850;
+      padding: 14px 18px;
+      font-size: 15px;
+      letter-spacing: .02em
+    }
+
+    .final .exam-card-title {
+      background: var(--final-bg);
+      color: var(--final-ink)
+    }
+
+    .exam-row {
+      display: grid;
+      grid-template-columns: 96px minmax(120px, 1fr) auto;
+      gap: 14px;
+      padding: 16px 18px;
+      border-bottom: 1px dashed var(--line-soft);
+      align-items: center;
+      min-height: 56px;
+      font-size: 14px
+    }
+
+    .exam-row:last-child {
+      border-bottom: 0
+    }
+
+    .exam-code {
+      font-weight: 850;
+      font-size: 16px;
+      color: var(--ink-strong);
+      white-space: nowrap
+    }
+
+    .exam-date {
+      color: var(--muted);
+      white-space: nowrap
+    }
+
+    .exam-time {
+      text-align: right;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 14px;
+      white-space: nowrap
+    }
+
+    .exam-empty {
+      padding: 20px 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5
+    }
+
+    .exporting .exam-grid {
+      grid-template-columns: 1fr 1fr
+    }
+
+    .footnote {
+      font-size: 10px;
+      color: var(--muted);
+      padding: 5px 3px 0
+    }
+
+    /* ---------- Student Tutor (ST) sidebar ---------- */
+    .st-block {
+      margin-top: 13px;
+      border-top: 1px solid var(--line-soft);
+      padding-top: 11px
+    }
+
+    .st-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px
+    }
+
+    .chip {
+      border: 1px solid var(--st-border);
+      background: var(--st-fill);
+      color: var(--st-ink);
+      border-radius: 999px;
+      padding: 1px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap
+    }
+
+    .selected-item.st-item {
+      border-left: 4px solid var(--st-border)
+    }
+
+    /* ---------- Consultation-slot picker (pop-up) ---------- */
+    body.modal-open {
+      overflow: hidden
+    }
+
+    .picker-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: var(--overlay);
+      -webkit-backdrop-filter: blur(7px);
+      backdrop-filter: blur(7px);
+      animation: pickerFade .15s ease-out
+    }
+
+    @keyframes pickerFade {
+      from {
+        opacity: 0
+      }
+
+      to {
+        opacity: 1
+      }
+    }
+
+    .picker-modal {
+      width: 100%;
+      max-width: 1000px;
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow-lg);
+      padding: 14px 14px 18px;
+      font-family: var(--routine-font);
+      outline: none
+    }
+
+    .picker-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 4px 14px;
+      padding: 2px 4px 6px
+    }
+
+    .picker-title {
+      font-size: 16px;
+      font-weight: 850;
+      color: var(--ink-strong)
+    }
+
+    .picker-sub {
+      font-size: 12px;
+      color: var(--muted)
+    }
+
+    .picker-count {
+      margin-left: auto;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted)
+    }
+
+    .picker-table {
+      --th-font: 13px;
+      --th-height: 38px;
+      --time-font: 12px;
+      --empty-row-h: 44px;
+      min-width: 760px
+    }
+
+    .pick-slot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: var(--empty-row-h);
+      border: 1.5px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface-soft);
+      color: var(--st-ink);
+      font-weight: 800;
+      font-size: 16px;
+      line-height: 1;
+      padding: 0
+    }
+
+    .pick-slot:hover {
+      background: var(--line-soft);
+      border-color: var(--grid-head-line)
+    }
+
+    .pick-slot:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px
+    }
+
+    .pick-slot[aria-pressed="true"] {
+      background: var(--st-fill);
+      border: 2px solid var(--st-border)
+    }
+
+    .pick-slot[aria-pressed="true"]::after {
+      content: "✓"
+    }
+
+    .pick-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 6px
+    }
+
+    .btn-cozy {
+      min-width: 120px;
+      border: 0;
+      border-radius: 6px;
+      padding: 10px 22px;
+      color: #fff;
+      font-weight: 800;
+      box-shadow: 0 2px 0 rgba(0, 0, 0, .12);
+      transition: background-color .12s ease, transform .06s ease
+    }
+
+    .btn-cozy:active {
+      transform: translateY(1px)
+    }
+
+    .btn-cozy.done {
+      background: var(--done)
+    }
+
+    .btn-cozy.done:hover {
+      background: var(--done-hover)
+    }
+
+    .btn-cozy.cancel {
+      background: var(--cancel)
+    }
+
+    .btn-cozy.cancel:hover {
+      background: var(--cancel-hover)
+    }
+
+    .btn-cozy:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px
+    }
+
+    @media(prefers-reduced-motion: reduce) {
+
+      .picker-overlay,
+      .btn-cozy,
+      .theme-box {
+        animation: none;
+        transition: none
+      }
+    }
+
+    @media(max-width:1350px) {
+      .exam-grid {
+        grid-template-columns: 1fr
+      }
+    }
+
+    @media(max-width:950px) {
+      .main-grid {
+        grid-template-columns: 1fr
+      }
+
+      .sidebar {
+        position: static;
+        max-height: none;
+        overflow: visible
+      }
+
+      .exam-grid {
+        grid-template-columns: 1fr
+      }
+
+      .course-legend {
+        margin-left: 0
+      }
+
+      .routine-head {
+        gap: 14px
+      }
+
+      .top-actions {
+        margin-left: 0
+      }
+    }
+
+    @media(max-width:550px) {
+      .app {
+        padding: 7px
+      }
+
+      .topbar {
+        padding: 12px
+      }
+
+      .routine-head {
+        padding: 12px;
+        gap: 12px
+      }
+
+      .exam-row {
+        grid-template-columns: 78px minmax(90px, 1fr);
+        padding: 14px
+      }
+
+      .exam-time {
+        grid-column: 1/-1;
+        text-align: left
+      }
+
+      .exam-date {
+        white-space: normal
+      }
+
+      .timetable {
+        min-width: 1000px
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header class="topbar panel">
+      <div class="brand">BRACU Routine Generator</div>
+      <div class="meta">Semester: <strong id="semester">Loading…</strong></div>
+      <div class="meta">Sections: <strong id="totalSections">—</strong></div>
+      <div class="top-actions">
+        <span class="updated" id="lastUpdated">Checking data feed…</span>
+        <button class="btn" id="refreshBtn" type="button">↻ Refresh data</button>
+        <div class="theme-switch" role="group" aria-label="Colour theme">
+          <span class="theme-label">Theme:</span>
+          <button type="button" class="theme-box" data-theme-id="antique" style="--sw:#6A5C55" title="Antique Paper &amp; Ink" aria-label="Antique Paper &amp; Ink" aria-pressed="true"></button>
+          <button type="button" class="theme-box" data-theme-id="sage" style="--sw:#46747A" title="Sage &amp; Teal Study" aria-label="Sage &amp; Teal Study" aria-pressed="false"></button>
+          <button type="button" class="theme-box" data-theme-id="terracotta" style="--sw:#A85D3B" title="Oatmilk &amp; Terracotta" aria-label="Oatmilk &amp; Terracotta" aria-pressed="false"></button>
+          <button type="button" class="theme-box" data-theme-id="burgundy" style="--sw:#7B1E2E" title="Burgundy Heritage" aria-label="Burgundy Heritage" aria-pressed="false"></button>
+        </div>
+      </div>
+    </header>
+    <div id="status" class="status">Connecting to the current Connect JSON feed…</div>
+    <div class="main-grid">
+      <aside class="sidebar panel">
+        <h2 class="section-title">Build your routine</h2>
+        <label class="field-label" for="courseSearch">Search course</label>
+        <input class="control" id="courseSearch" type="search" placeholder="e.g. CSE220 or course-name"
+          autocomplete="off" disabled>
+        <div class="suggestions" id="suggestions" role="listbox"></div>
+        <div id="selectedCourseBox" class="hidden">
+          <div class="section-option" style="margin-top:10px;border-bottom:0"><span
+              id="selectedCourseLabel"></span><button class="remove" id="clearCourse" type="button"
+              aria-label="Clear selected course">×</button></div>
+          <label class="field-label" for="sectionSelect">Choose section</label>
+          <select class="control" id="sectionSelect" disabled>
+            <option value="">Select a section…</option>
+          </select>
+          <div id="sectionDetails" class="helper" style="margin-top:8px"></div>
+          <button class="btn primary" id="addBtn" type="button" style="width:100%;margin-top:10px" disabled>+ Add to
+            routine</button>
+        </div>
+        <div class="st-block">
+          <h3 class="section-title" style="font-size:14px">Student Tutor (ST)</h3>
+          <p class="helper" style="margin-bottom:0">Are you a Student Tutor? Add your ST course and consultation slots.
+          </p>
+          <label class="field-label" for="stCourseSearch">ST course</label>
+          <input class="control" id="stCourseSearch" type="search" placeholder="e.g. CSE110 or course-name"
+            autocomplete="off" disabled>
+          <div class="suggestions" id="stSuggestions" role="listbox"></div>
+          <div id="stDetails" class="hidden">
+            <div class="section-option" style="margin-top:10px;border-bottom:0"><span id="stCourseLabel"></span><button
+                class="remove" id="stClearCourse" type="button" aria-label="Clear ST course">×</button></div>
+            <div id="stSectionWrap" class="hidden">
+              <label class="field-label" for="stSectionSelect">ST section</label>
+              <select class="control" id="stSectionSelect">
+                <option value="">Select a section…</option>
+              </select>
+              <div id="stSectionDetails" class="helper" style="margin-top:8px"></div>
+            </div>
+            <label class="field-label" for="stSlotBtn">Consultation slots</label>
+            <button class="btn" id="stSlotBtn" type="button" style="width:100%">Choose consultation slots…</button>
+            <div class="st-chips" id="stSlotChips"></div>
+            <div id="stHint" class="helper" style="margin:8px 0 0"></div>
+            <button class="btn primary" id="stAddBtn" type="button" style="width:100%;margin-top:10px" disabled>+ Add ST
+              role</button>
+          </div>
+        </div>
+        <div class="selected-list">
+          <h3 class="section-title" style="font-size:14px">Selected courses <span id="selectedCount">(0)</span></h3>
+          <div id="selectedList">
+            <p class="helper">Your selected courses will appear here.</p>
+          </div>
+          <div id="stListBlock" class="hidden">
+            <h3 class="section-title" style="font-size:14px;margin-top:14px">ST roles <span id="stCount">(0)</span>
+            </h3>
+            <div id="stList"></div>
+          </div>
+        </div>
+        <div class="sidebar-footer">
+          <button class="btn" id="clearAllBtn" type="button">Clear all</button>
+          <button class="btn" id="exportBtn" type="button" disabled>Download PNG</button>
+        </div>
+        <p class="footnote">Routine selections are saved in this browser only.</p>
+      </aside>
+      <main>
+        <div id="exportArea">
+          <section class="routine-panel panel">
+            <div class="routine-head">
+              <div class="routine-stat">Days: <strong id="days">0</strong></div>
+              <div class="routine-stat">Avg Daily: <strong id="avgDaily">0 hours 0 minutes</strong></div>
+
+              <div class="course-legend" id="courseLegend" aria-label="Course colour legend"></div>
+            </div>
+            <div class="table-wrap" id="timetableWrap">
+              <div class="empty-state">
+                <div class="icon">▦</div><strong>Your timetable will appear here</strong>Search for a course and add a
+                section to get started.
+              </div>
+            </div>
+            <div id="clashNote" class="clash-note hidden"></div>
+          </section>
+          <section class="exam-wrap" aria-label="Exam schedule">
+            <div class="exam-head">Exam Schedule</div>
+            <div class="exam-grid">
+              <div class="exam-card">
+                <div class="exam-card-title">MID EXAMS</div>
+                <div id="midExams">
+                  <div class="exam-empty">Add courses to view available midterm exam information.</div>
+                </div>
+              </div>
+              <div class="exam-card final">
+                <div class="exam-card-title">FINAL EXAMS</div>
+                <div id="finalExams">
+                  <div class="exam-empty">Add courses to view available final exam information.</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+        <p class="footnote">Data source: <a href="https://usis-cdn.eniamza.com/connect-migrate.json" target="_blank"
+            rel="noreferrer">Connect JSON feed</a>.</p>
+      </main>
+    </div>
+  </div>
+  <div class="picker-overlay hidden" id="stPicker">
+    <div class="picker-modal" id="stPickerModal" role="dialog" aria-modal="true" aria-labelledby="stPickerTitle"
+      tabindex="-1">
+      <div class="picker-head">
+        <div class="picker-title" id="stPickerTitle">ST consultation slots</div>
+        <div class="picker-sub">Click a slot to select it. Click again to deselect.</div>
+        <div class="picker-count" id="stPickerCount">0 selected</div>
+      </div>
+      <div class="table-wrap" id="stPickerTable"></div>
+      <div class="pick-actions">
+        <button type="button" class="btn-cozy done" id="stPickerDone">Done</button>
+        <button type="button" class="btn-cozy cancel" id="stPickerCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+    'use strict';
+    const FEED_URL = 'https://usis-cdn.eniamza.com/connect-migrate.json';
+    const STORAGE_KEY = 'bracu-routine-generator-v1';
+    const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const FIXED_SLOTS = [
+      ['08:00 AM', '09:20 AM'], ['09:30 AM', '10:50 AM'], ['11:00 AM', '12:20 PM'],
+      ['12:30 PM', '01:50 PM'], ['02:00 PM', '03:20 PM'], ['03:30 PM', '04:50 PM'], ['05:00 PM', '06:20 PM']
+    ];
+    let feed = null, allSections = [], courseIndex = [], selectedSections = [];
+    // ---- Student Tutor (ST) state ----
+    const ST_STORAGE_KEY = 'bracu-routine-generator-st-v1';
+    const ST_LAB_COURSES = ['CSE110', 'CSE111']; // ST of these must attend their section's lab
+    const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    let stRoles = [];                                   // [{ code, name, record|null, slots:['day-slotIndex', ...] }]
+    let stDraft = { code: '', sectionKey: '', slots: [] }; // the ST form being filled in the sidebar
+    let pickerTemp = null;                               // working Set of slot keys while the popup is open
+    const $ = id => document.getElementById(id);
+
+    function setStatus(message, kind = '') { const el = $('status'); el.textContent = message; el.className = 'status' + (kind ? ' ' + kind : ''); }
+    function courseCode(r) { return String(r?.courseCode ?? r?.course_code ?? '').trim(); }
+    function sectionName(r) { return String(r?.sectionName ?? r?.section ?? r?.sectionNo ?? '').trim(); }
+    function courseName(r) { return String(r?.courseName ?? r?.courseTitle ?? '').trim(); }
+    function facultyText(r) { const f = r?.faculties ?? r?.facultyInitial ?? r?.faculty ?? ''; return Array.isArray(f) ? f.join(', ') : String(f ?? '').trim(); }
+    function sectionKey(r) { return String(r?.sectionId ?? `${courseCode(r)}-${sectionName(r)}`); }
+    function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+    function asText(v) { if (v == null) return ''; if (Array.isArray(v)) return v.map(asText).filter(Boolean).join(' / '); if (typeof v === 'object') return ''; return String(v).trim(); }
+    function loadFeedData(obj) {
+      if (!obj || !Array.isArray(obj.courses)) throw new Error('This JSON does not contain a courses array.');
+      feed = obj; allSections = obj.courses.filter(r => courseCode(r) && sectionName(r));
+      const byCode = new Map();
+      for (const r of allSections) { const code = courseCode(r); if (!byCode.has(code)) byCode.set(code, { code, name: courseName(r), records: [] }); byCode.get(code).records.push(r); }
+      courseIndex = [...byCode.values()].sort((a, b) => a.code.localeCompare(b.code));
+      $('semester').textContent = obj.metadata?.currentSemester || 'Unknown';
+      $('totalSections').textContent = Number(obj.metadata?.totalSections || allSections.length).toLocaleString();
+      const date = obj.metadata?.lastUpdated ? new Date(obj.metadata.lastUpdated) : null;
+      $('lastUpdated').textContent = date && !Number.isNaN(date.getTime()) ? `Feed updated ${date.toLocaleString()}` : 'Feed timestamp unavailable';
+      $('courseSearch').disabled = false; $('stCourseSearch').disabled = false;
+      setStatus(`Loaded ${allSections.length.toLocaleString()} sections from the live JSON feed.`, 'ok');
+      renderSuggestions($('courseSearch').value);
+      // Keep saved sections where their IDs still exist in the current feed.
+      try { const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); selectedSections = saved.map(k => allSections.find(r => sectionKey(r) === String(k))).filter(Boolean); } catch { selectedSections = []; }
+      try { const savedSt = JSON.parse(localStorage.getItem(ST_STORAGE_KEY) || '[]'); stRoles = (Array.isArray(savedSt) ? savedSt : []).map(hydrateStRole).filter(Boolean); } catch { stRoles = []; }
+      if (stDraft.code && !stCourse()) resetStDraft();
+      renderAll(); renderStForm();
+    }
+    async function fetchFeed() {
+      $('refreshBtn').disabled = true; setStatus('Fetching the latest JSON feed…');
+      try { const response = await fetch(FEED_URL, { cache: 'no-store' }); if (!response.ok) throw new Error(`Feed returned HTTP ${response.status}.`); const obj = await response.json(); loadFeedData(obj); }
+      catch (err) { setStatus(`The browser could not fetch the feed (${err.message}). Please check your internet connection and press Refresh.`, 'error'); $('lastUpdated').textContent = 'Live feed not loaded'; }
+      finally { $('refreshBtn').disabled = false; }
+    }
+    function renderSuggestions(query) {
+      const box = $('suggestions'); if (!courseIndex.length) { box.classList.remove('open'); box.innerHTML = ''; return; }
+      const q = String(query || '').trim().toLowerCase();
+      if (!q) { box.classList.remove('open'); box.innerHTML = ''; return; }
+      const matches = courseIndex.filter(c => c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || c.records.some(r => facultyText(r).toLowerCase().includes(q))).slice(0, 12);
+      box.innerHTML = matches.length ? matches.map(c => `<button type="button" class="suggestion" data-course="${escapeHtml(c.code)}"><strong>${escapeHtml(c.code)}</strong><small>${escapeHtml(c.name || 'Course name unavailable')} · ${c.records.length} section(s)</small></button>`).join('') : `<div class="suggestion">No matching courses found.</div>`;
+      box.classList.add('open'); box.querySelectorAll('[data-course]').forEach(btn => btn.addEventListener('click', () => chooseCourse(btn.dataset.course)));
+    }
+    function chooseCourse(code) {
+      const c = courseIndex.find(x => x.code === code); if (!c) return;
+      $('courseSearch').value = code; $('suggestions').classList.remove('open'); $('selectedCourseBox').classList.remove('hidden'); $('selectedCourseLabel').textContent = `${c.code} — ${c.name || 'Course name unavailable'}`;
+      $('sectionSelect').innerHTML = sectionOptionsHtml(c);
+      $('sectionSelect').disabled = false; $('addBtn').disabled = true; $('sectionDetails').textContent = '';
+    }
+    function sectionRecords(course) {
+      const unique = new Map(); for (const r of course.records) { const k = sectionKey(r); if (!unique.has(k)) unique.set(k, r); }
+      return [...unique.values()].sort((a, b) => sectionName(a).localeCompare(sectionName(b), undefined, { numeric: true }));
+    }
+    function sectionOptionsHtml(course) {
+      return '<option value="">Select a section…</option>' + sectionRecords(course).map(r => `<option value="${escapeHtml(sectionKey(r))}">Section ${escapeHtml(sectionName(r))}${facultyText(r) ? ' · ' + escapeHtml(facultyText(r)) : ''}</option>`).join('');
+    }
+    function currentSection() { return allSections.find(r => sectionKey(r) === $('sectionSelect').value); }
+    function detailsText(r) { if (!r) return ''; const bits = []; if (r.courseCredit != null) bits.push(`${r.courseCredit} credit(s)`); if (facultyText(r)) bits.push(`Faculty: ${facultyText(r)}`); return bits.join(' · '); }
+    function parseClock(s) { const m = String(s || '').match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i); if (!m) return null; let h = Number(m[1]) % 12; if (m[3].toUpperCase() === 'PM') h += 12; return h * 60 + Number(m[2]); }
+    function fmtClock(s) { const m = String(s || '').match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i); if (!m) return String(s || '').trim(); return `${String(Number(m[1])).padStart(2, '0')}:${m[2]} ${m[3].toUpperCase()}`; }
+    function parseSchedule(value) {
+      const input = Array.isArray(value) ? value.map(asText).join('\n') : asText(value); if (!input) return [];
+      const out = []; const re = /(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)\s*\(\s*(\d{1,2}:\d{2}\s*(?:AM|PM))\s*-\s*(\d{1,2}:\d{2}\s*(?:AM|PM))(?:\s*-\s*([^)]*?))?\s*\)/gi;
+      let m; while ((m = re.exec(input)) !== null) { const start = fmtClock(m[2]), end = fmtClock(m[3]); out.push({ day: DAYS.findIndex(d => d.toLowerCase() === m[1].toLowerCase()), dayName: m[1], start, end, startMin: parseClock(start), endMin: parseClock(end), room: String(m[4] || '').trim().replace(/^[-–—\s]+/, '') }); }
+      return out;
+    }
+    function parseRecordEvents(record) { const events = []; for (const s of parseSchedule(record.preRegSchedule)) events.push({ ...s, record, type: 'THEORY' }); for (const s of parseSchedule(record.preRegLabSchedule)) events.push({ ...s, record, type: 'LAB' }); return events; }
+    function timeDuration(e) { return e.startMin != null && e.endMin != null ? Math.max(0, e.endMin - e.startMin) : 0; }
+    function allEvents() { return [...selectedSections.flatMap(parseRecordEvents), ...stRoles.flatMap(stEvents)]; }
+    function hasContent() { return selectedSections.length > 0 || stRoles.length > 0; }
+    // ---- ST helpers ----
+    function stNeedsLab(code) { return ST_LAB_COURSES.includes(String(code || '').replace(/\s+/g, '').toUpperCase()); }
+    function isValidSlotKey(k) { const m = /^([0-6])-(\d+)$/.exec(String(k)); return !!m && Number(m[2]) < FIXED_SLOTS.length; }
+    function sortSlotKeys(keys) { return [...new Set(keys.map(String))].filter(isValidSlotKey).sort((a, b) => { const [ad, asl] = a.split('-').map(Number), [bd, bsl] = b.split('-').map(Number); return ad - bd || asl - bsl; }); }
+    function slotKeyLabel(k) { const [d, s] = k.split('-').map(Number); const sl = slotDefs()[s]; return `${SHORT_DAYS[d]} ${sl.start}`; }
+    function hydrateStRole(s) {
+      if (!s || typeof s !== 'object') return null;
+      const c = courseIndex.find(x => x.code === s.code); if (!c) return null;
+      let record = null;
+      if (s.sectionKey) { record = allSections.find(r => sectionKey(r) === String(s.sectionKey)); if (!record || courseCode(record) !== c.code) return null; }
+      else if (stNeedsLab(c.code)) return null;
+      const slots = sortSlotKeys(Array.isArray(s.slots) ? s.slots : []);
+      if (!record && !slots.length) return null;
+      return { code: c.code, name: c.name, record, slots };
+    }
+    function stEvents(role) {
+      const out = [];
+      // Lab of the ST's section (only CSE110 / CSE111 roles carry a record) – theory is NOT included.
+      if (role.record) for (const s of parseSchedule(role.record.preRegLabSchedule)) out.push({ ...s, record: role.record, type: 'LAB', st: true, stKind: 'lab' });
+      const defs = slotDefs(), pseudo = { courseCode: role.code, courseName: role.name };
+      for (const k of role.slots) { const [d, si] = k.split('-').map(Number), sl = defs[si]; if (!sl) continue; out.push({ day: d, dayName: DAYS[d], start: sl.start, end: sl.end, startMin: sl.startMin, endMin: sl.endMin, room: '', record: pseudo, type: 'CONSULT', st: true, stKind: 'consult' }); }
+      return out;
+    }
+    function slotDefs() { return FIXED_SLOTS.map(([start, end]) => ({ start: fmtClock(start), end: fmtClock(end), startMin: parseClock(start), endMin: parseClock(end) })); }
+    // Course card colours: muted vintage tones that sit well on every theme.
+    const PALETTE = [
+      { course: '#6B8F5E', tint: '#E4ECD7', text: '#3A5230' }, // sage
+      { course: '#B4545F', tint: '#F3DADB', text: '#6E2630' }, // faded rose
+      { course: '#4F7C82', tint: '#D9E8E8', text: '#264A4F' }, // muted teal
+      { course: '#C79A1E', tint: '#F6E7B9', text: '#6B4F05' }, // mustard
+      { course: '#8B5E83', tint: '#EBDCE8', text: '#523150' }, // plum
+      { course: '#C0693E', tint: '#F5DCCB', text: '#7A3516' }, // terracotta
+      { course: '#5F7B9C', tint: '#DCE5EF', text: '#2F435E' }, // slate
+      { course: '#8A8A3B', tint: '#ECEBCB', text: '#4F4F17' } // olive
+    ];
+    let colorMap = new Map();
+    function buildColorMap(events) {
+      const codes = [...new Set(events.filter(e => !e.st).map(e => courseCode(e.record)))].sort((a, b) => a.localeCompare(b));
+      colorMap = new Map(codes.map((c, i) => {
+        if (i < PALETTE.length) return [c, PALETTE[i]];
+        const h = (i * 137.508) % 360; // golden-angle hue for very large selections
+        return [c, { course: `hsl(${h} 35% 45%)`, tint: `hsl(${h} 40% 90%)`, text: `hsl(${h} 45% 24%)` }];
+      }));
+    }
+    function courseStyle(code) { const c = colorMap.get(code) || PALETTE[0]; return `--course:${c.course};--tint:${c.tint};--text:${c.text};`; }
+    function clashPairs(events) { const pairs = []; for (let i = 0; i < events.length; i++)for (let j = i + 1; j < events.length; j++) { const a = events[i], b = events[j]; if (a.day !== b.day || a.startMin == null || a.endMin == null || b.startMin == null || b.endMin == null) continue; if (a.startMin < b.endMin && b.startMin < a.endMin) pairs.push([a, b]); } return pairs; }
+    function renderTimetable() {
+      const events = allEvents();
+      buildColorMap(events);
+      $('courseLegend').innerHTML = [...colorMap.keys()].map(c => `<span><i class="course-swatch" style="${courseStyle(c)}"></i>${escapeHtml(c)}</span>`).join('') + (events.some(e => e.st) ? '<span><i class="course-swatch st-swatch"></i>ST</span>' : '');
+      const host = $('timetableWrap');
+      const slots = slotDefs();
+      const clashes = clashPairs(events);
+      const dayCount = new Set(events.map(e => e.day)).size;
+      const total = events.reduce((sum, e) => sum + timeDuration(e), 0);
+      const avg = dayCount ? Math.round(total / dayCount) : 0;
+      $('days').textContent = dayCount;
+      $('avgDaily').textContent = `${Math.floor(avg / 60)} hours ${avg % 60} minutes`;
+      if (!hasContent()) {
+        host.innerHTML = '<div class="empty-state"><div class="icon">▦</div><strong>Your timetable will appear here</strong>Select a course and section to get started.</div>';
+        $('clashNote').classList.add('hidden');
+        return;
+      }
+      const hit = (e, slot) => e.startMin != null && e.endMin != null && e.startMin < slot.endMin && e.endMin > slot.startMin;
+      const usedDay = DAYS.map((_, d) => events.some(e => e.day === d));
+      const usedSlot = slots.map(sl => events.some(e => hit(e, sl)));
+      // Column widths: time column fixed share, busy days wider, idle days narrower.
+      const TIME_W = 18, W_USED = 1.3, W_EMPTY = 1;
+      const totalW = DAYS.reduce((n, _, d) => n + (usedDay[d] ? W_USED : W_EMPTY), 0);
+      const colPct = d => ((100 - TIME_W) * (usedDay[d] ? W_USED : W_EMPTY) / totalW).toFixed(3) + '%';
+      let html = '<table class="timetable"><colgroup><col style="width:' + TIME_W + '%">' + DAYS.map((_, d) => `<col style="width:${colPct(d)}">`).join('') + '</colgroup>';
+      html += '<thead><tr><th>Time/Day</th>' + DAYS.map(d => `<th>${d}</th>`).join('') + '</tr></thead><tbody>';
+      slots.forEach((slot, si) => {
+        html += `<tr class="${usedSlot[si] ? 'used-row' : 'empty-row'}"><td class="time">${escapeHtml(slot.start)}-${escapeHtml(slot.end)}</td>`;
+        for (let day = 0; day < 7; day++) {
+          const inCell = events.filter(e => e.day === day && hit(e, slot));
+          html += '<td>';
+          for (const e of inCell) {
+            const r = e.record, code = courseCode(r), name = courseName(r), sec = sectionName(r), fac = facultyText(r);
+            const isClash = clashes.some(pair => pair.includes(e));
+            const meta = [sec, fac].filter(Boolean).join(' | ');
+            if (e.stKind === 'consult') {
+              html += `<article class="event st consult ${isClash ? 'clash' : ''}" title="${escapeHtml(`${name || code} · ST consultation`)}"><div class="event-top"><div class="event-head">${escapeHtml(code)}</div></div><div class="event-meta">ST consultation</div></article>`;
+              continue;
+            }
+            html += `<article class="event ${e.st ? 'st' : ''} ${e.type === 'LAB' ? 'lab' : ''} ${isClash ? 'clash' : ''}" style="${e.st ? '' : courseStyle(code)}" title="${escapeHtml(`${e.st ? 'ST lab · ' : ''}${name || code} · Section ${sec}${fac ? ' · ' + fac : ''}${e.room ? ' · Room ' + e.room : ''}`)}"><div class="event-top"><div class="event-head">${escapeHtml(code)}</div><div class="event-type">${e.type}</div></div><div class="event-meta">${escapeHtml(meta)}</div>${e.room ? `<div class="event-meta room">${escapeHtml(e.room)}</div>` : ''}</article>`;
+          }
+          html += '</td>';
+        }
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      host.innerHTML = html;
+      $('clashNote').classList.toggle('hidden', clashes.length === 0);
+      $('clashNote').textContent = clashes.length ? 'Overlapping classes, labs or ST slots are outlined in red. Review your selections.' : '';
+    }
+    function examInfo(record, kind) {
+      const schedule = record?.sectionSchedule || {}; const root = { ...record, ...schedule }; const keys = Object.keys(root); const prefix = kind.toLowerCase();
+      const findValue = patterns => { for (const re of patterns) { const k = keys.find(key => re.test(key) && root[key] != null && asText(root[key])); if (k) return { key: k, value: root[k] }; } return null; };
+      const detail = findValue([new RegExp(prefix + '.*exam.*(detail|schedule|info)', 'i'), new RegExp(prefix + '.*(detail|schedule)', 'i')]);
+      const date = findValue([new RegExp(prefix + '.*exam.*date', 'i'), new RegExp(prefix + '.*date.*exam', 'i')]);
+      const start = findValue([new RegExp(prefix + '.*exam.*(start.?time|start)', 'i'), new RegExp(prefix + '.*(start.?time|start)', 'i')]);
+      const end = findValue([new RegExp(prefix + '.*exam.*(end.?time|end)', 'i'), new RegExp(prefix + '.*(end.?time|end)', 'i')]);
+      const time = findValue([new RegExp(prefix + '.*exam.*time', 'i'), new RegExp(prefix + '.*time.*exam', 'i')]);
+      let detailText = detail ? asText(detail.value) : ''; let dateText = date ? asText(date.value) : ''; let timeText = ''; if (start && end) timeText = `${asText(start.value)} – ${asText(end.value)}`; else if (start) timeText = asText(start.value); else if (time) timeText = asText(time.value);
+      // Known Connect fields sometimes expose finalExamDetail as the most complete human-readable string.
+      if (!dateText && detailText) { const dm = detailText.match(/(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)?\w*[, ]+\w+\s+\d{1,2},?\s+\d{4}|\d{4}-\d{2}-\d{2}/i); if (dm) dateText = dm[0]; }
+      if (!timeText && detailText) { const tm = detailText.match(/\d{1,2}:\d{2}\s*(?:AM|PM)(?:\s*(?:-|–|to)\s*\d{1,2}:\d{2}\s*(?:AM|PM))?/i); if (tm) timeText = tm[0]; }
+      return dateText || timeText || detailText ? { date: formatDate(dateText || 'TBA'), time: timeText || detailText || 'Time TBA', detail: detailText } : null;
+    }
+    function formatExamTime(value) {
+      const text = String(value || '').trim();
+      if (!text || text === 'Time TBA' || text === 'TBA') return text || 'Time TBA';
+      const matches = [...text.matchAll(/(\d{1,2}:\d{2}\s*(?:AM|PM)?)/gi)];
+      if (!matches.length) return text;
+      const raw = matches.map(m => m[1].trim());
+      const suffixOf = s => ((s.match(/\b(AM|PM)\b/i) || [])[1] || '').toUpperCase();
+      const convert = (token, inferred = '') => {
+        const m = token.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i); if (!m) return token;
+        let h = Number(m[1]), min = m[2], period = (m[3] || inferred).toUpperCase();
+        if (!period) { period = h >= 12 ? 'PM' : 'AM'; }
+        if (m[3]) { h = h % 12; if (m[3].toUpperCase() === 'PM') h += 12; }
+        else if (inferred) { h = h % 12; if (inferred === 'PM') h += 12; }
+        else { h = h % 24; }
+        const normalizedHour = ((h % 12) || 12).toString().padStart(2, '0');
+        const normalizedPeriod = h >= 12 ? 'PM' : 'AM';
+        return `${normalizedHour}:${min} ${normalizedPeriod}`;
+      };
+      if (raw.length >= 2) {
+        const firstSuffix = suffixOf(raw[0]), secondSuffix = suffixOf(raw[1]);
+        const first = convert(raw[0], firstSuffix || secondSuffix), second = convert(raw[1], secondSuffix || firstSuffix);
+        return `${first} - ${second}`;
+      }
+      return convert(raw[0], suffixOf(raw[0]));
+    }
+    function formatDate(value) { const s = String(value || '').trim(); if (!s || s === 'TBA') return s || 'TBA'; const d = new Date(s); if (!Number.isNaN(d.getTime()) && (/\d{4}/.test(s))) return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }); return s; }
+    function renderExams() {
+      const mid = [], fin = []; for (const r of selectedSections) { const common = { code: courseCode(r), name: courseName(r), section: sectionName(r) }; const m = examInfo(r, 'mid'), f = examInfo(r, 'final'); if (m) mid.push({ ...common, ...m }); if (f) fin.push({ ...common, ...f }); }
+      const row = x => `<div class="exam-row"><div class="exam-code">${escapeHtml(x.code)}</div><div class="exam-date">${escapeHtml(x.date || 'TBA')}</div><div class="exam-time">${escapeHtml(formatExamTime(x.time || 'Time TBA'))}</div></div>`;
+      $('midExams').innerHTML = mid.length ? mid.map(row).join('') : '<div class="exam-empty">No midterm exam details were found in the feed for the selected sections.</div>';
+      $('finalExams').innerHTML = fin.length ? fin.map(row).join('') : '<div class="exam-empty">No final exam details were found in the feed for the selected sections.</div>';
+    }
+    function renderSelected() {
+      $('selectedCount').textContent = `(${selectedSections.length})`; const host = $('selectedList');
+      if (!selectedSections.length) { host.innerHTML = '<p class="helper">Your selected courses will appear here.</p>'; return; }
+      host.innerHTML = selectedSections.map(r => `<div class="selected-item"><div class="selected-copy"><strong>${escapeHtml(courseCode(r))} · Sec ${escapeHtml(sectionName(r))}</strong><small>${escapeHtml(courseName(r))}${facultyText(r) ? ' · ' + escapeHtml(facultyText(r)) : ''}</small></div><button type="button" class="remove" data-remove="${escapeHtml(sectionKey(r))}" aria-label="Remove ${escapeHtml(courseCode(r))}">×</button></div>`).join('');
+      host.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', () => { selectedSections = selectedSections.filter(r => sectionKey(r) !== btn.dataset.remove); persistSelection(); renderAll(); }));
+    }
+    function persistSelection() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedSections.map(sectionKey))); } catch { } }
+    function renderAll() { renderSelected(); renderStList(); renderTimetable(); renderExams(); $('exportBtn').disabled = !hasContent(); }
+    $('courseSearch').addEventListener('input', e => { $('selectedCourseBox').classList.add('hidden'); renderSuggestions(e.target.value); });
+    $('courseSearch').addEventListener('focus', e => { if (e.target.value) renderSuggestions(e.target.value); });
+    $('sectionSelect').addEventListener('change', () => { const r = currentSection(); $('sectionDetails').textContent = detailsText(r); $('addBtn').disabled = !r; });
+    $('clearCourse').addEventListener('click', () => { $('courseSearch').value = ''; $('selectedCourseBox').classList.add('hidden'); $('suggestions').classList.remove('open'); });
+    $('addBtn').addEventListener('click', () => { const r = currentSection(); if (!r) return; selectedSections = selectedSections.filter(x => courseCode(x) !== courseCode(r)); selectedSections.push(r); selectedSections.sort((a, b) => courseCode(a).localeCompare(courseCode(b))); persistSelection(); renderAll(); $('courseSearch').value = ''; $('selectedCourseBox').classList.add('hidden'); $('suggestions').classList.remove('open'); });
+    $('clearAllBtn').addEventListener('click', () => { selectedSections = []; stRoles = []; persistSelection(); persistSt(); renderAll(); renderStForm(); });
+    $('refreshBtn').addEventListener('click', fetchFeed);
+
+    // =====================  Student Tutor (ST) UI  =====================
+    function persistSt() { try { localStorage.setItem(ST_STORAGE_KEY, JSON.stringify(stRoles.map(r => ({ code: r.code, sectionKey: r.record ? sectionKey(r.record) : null, slots: r.slots })))); } catch { } }
+    function stCourse() { return courseIndex.find(x => x.code === stDraft.code); }
+    function stFormValid() { return !!stDraft.code && stDraft.slots.length > 0 && (!stNeedsLab(stDraft.code) || !!stDraft.sectionKey); }
+    function stLabInfoText(r) {
+      if (!r) return '';
+      const labs = parseSchedule(r.preRegLabSchedule);
+      if (!labs.length) return 'No lab time is listed for this section.';
+      return 'Lab (added automatically): ' + labs.map(l => `${SHORT_DAYS[l.day] || l.dayName} ${l.start}–${l.end}${l.room ? ' (' + l.room + ')' : ''}`).join(', ');
+    }
+    function renderStForm() {
+      const c = stCourse();
+      $('stDetails').classList.toggle('hidden', !c);
+      if (!c) return;
+      const needsLab = stNeedsLab(c.code), n = stDraft.slots.length;
+      $('stCourseLabel').textContent = `${c.code} — ${c.name || 'Course name unavailable'}`;
+      $('stSectionWrap').classList.toggle('hidden', !needsLab);
+      $('stSlotBtn').textContent = n ? `Edit consultation slots (${n})` : 'Choose consultation slots…';
+      $('stSlotChips').innerHTML = stDraft.slots.map(k => `<span class="chip">${escapeHtml(slotKeyLabel(k))}</span>`).join('');
+      const hints = [];
+      if (needsLab && !stDraft.sectionKey) hints.push('Choose the section you are ST of.');
+      if (!n) hints.push('Select at least one consultation slot.');
+      $('stHint').textContent = hints.join(' ');
+      $('stAddBtn').disabled = !stFormValid();
+      $('stAddBtn').textContent = stRoles.some(r => r.code === stDraft.code) ? 'Update ST role' : '+ Add ST role';
+    }
+    function resetStDraft() {
+      stDraft = { code: '', sectionKey: '', slots: [] };
+      $('stCourseSearch').value = ''; $('stSuggestions').classList.remove('open'); $('stSuggestions').innerHTML = '';
+      $('stSectionSelect').innerHTML = '<option value="">Select a section…</option>'; $('stSectionDetails').textContent = '';
+      renderStForm();
+    }
+    function renderStSuggestions(query) {
+      const box = $('stSuggestions'), q = String(query || '').trim().toLowerCase(), qn = q.replace(/\s+/g, '');
+      if (!courseIndex.length || !q) { box.classList.remove('open'); box.innerHTML = ''; return; }
+      const matches = courseIndex.filter(c => c.code.toLowerCase().includes(qn) || c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)).slice(0, 12);
+      box.innerHTML = matches.length ? matches.map(c => `<button type="button" class="suggestion" data-st-course="${escapeHtml(c.code)}"><strong>${escapeHtml(c.code)}</strong><small>${escapeHtml(c.name || 'Course name unavailable')}</small></button>`).join('') : `<div class="suggestion">No matching courses found.</div>`;
+      box.classList.add('open');
+      box.querySelectorAll('[data-st-course]').forEach(btn => btn.addEventListener('click', () => chooseStCourse(btn.dataset.stCourse)));
+    }
+    function chooseStCourse(code) {
+      const c = courseIndex.find(x => x.code === code); if (!c) return;
+      const existing = stRoles.find(r => r.code === code); // re-choosing a course you already added lets you edit it
+      stDraft = { code, sectionKey: existing && existing.record ? sectionKey(existing.record) : '', slots: existing ? [...existing.slots] : [] };
+      $('stCourseSearch').value = code; $('stSuggestions').classList.remove('open');
+      if (stNeedsLab(code)) {
+        $('stSectionSelect').innerHTML = sectionOptionsHtml(c);
+        $('stSectionSelect').value = stDraft.sectionKey;
+        $('stSectionDetails').textContent = stLabInfoText(allSections.find(r => sectionKey(r) === stDraft.sectionKey));
+      }
+      renderStForm();
+    }
+    function renderStList() {
+      $('stListBlock').classList.toggle('hidden', !stRoles.length);
+      $('stCount').textContent = `(${stRoles.length})`;
+      const host = $('stList');
+      host.innerHTML = stRoles.map(r => {
+        const bits = []; if (r.record) bits.push('Lab included'); bits.push(`${r.slots.length} consultation slot${r.slots.length === 1 ? '' : 's'}`);
+        return `<div class="selected-item st-item"><div class="selected-copy"><strong>${escapeHtml(r.code)} · ST${r.record ? ' · Sec ' + escapeHtml(sectionName(r.record)) : ''}</strong><small>${escapeHtml(bits.join(' · '))}</small></div><button type="button" class="remove" data-remove-st="${escapeHtml(r.code)}" aria-label="Remove ST role for ${escapeHtml(r.code)}">×</button></div>`;
+      }).join('');
+      host.querySelectorAll('[data-remove-st]').forEach(btn => btn.addEventListener('click', () => { stRoles = stRoles.filter(x => x.code !== btn.dataset.removeSt); persistSt(); renderAll(); renderStForm(); }));
+    }
+    $('stCourseSearch').addEventListener('input', e => { stDraft = { code: '', sectionKey: '', slots: [] }; renderStForm(); renderStSuggestions(e.target.value); });
+    $('stCourseSearch').addEventListener('focus', e => { if (e.target.value && !stDraft.code) renderStSuggestions(e.target.value); });
+    $('stClearCourse').addEventListener('click', resetStDraft);
+    $('stSectionSelect').addEventListener('change', e => {
+      stDraft.sectionKey = e.target.value;
+      $('stSectionDetails').textContent = stLabInfoText(allSections.find(r => sectionKey(r) === stDraft.sectionKey));
+      renderStForm();
+    });
+    $('stAddBtn').addEventListener('click', () => {
+      if (!stFormValid()) return;
+      const c = stCourse(); if (!c) return;
+      const record = stNeedsLab(c.code) ? allSections.find(r => sectionKey(r) === stDraft.sectionKey) || null : null;
+      if (stNeedsLab(c.code) && !record) return;
+      stRoles = stRoles.filter(r => r.code !== c.code);
+      stRoles.push({ code: c.code, name: c.name, record, slots: sortSlotKeys(stDraft.slots) });
+      stRoles.sort((a, b) => a.code.localeCompare(b.code));
+      persistSt(); resetStDraft(); renderAll();
+    });
+
+    // ---- Consultation slot picker (pop-up) ----
+    function isPickerOpen() { return !$('stPicker').classList.contains('hidden'); }
+    function syncPicker() {
+      $('stPicker').querySelectorAll('.pick-slot').forEach(b => b.setAttribute('aria-pressed', pickerTemp.has(b.dataset.key) ? 'true' : 'false'));
+      $('stPickerCount').textContent = `${pickerTemp.size} selected`;
+    }
+    function openStPicker() {
+      const c = stCourse(); if (!c) return;
+      pickerTemp = new Set(stDraft.slots);
+      $('stPickerTitle').textContent = `ST consultation slots · ${c.code}`;
+      const slots = slotDefs();
+      let html = '<table class="timetable picker-table"><colgroup><col style="width:132px">' + DAYS.map(() => '<col>').join('') + '</colgroup>';
+      html += '<thead><tr><th>Time/Day</th>' + DAYS.map(d => `<th>${d}</th>`).join('') + '</tr></thead><tbody>';
+      slots.forEach((slot, si) => {
+        html += `<tr class="empty-row"><td class="time">${escapeHtml(slot.start)}-${escapeHtml(slot.end)}</td>`;
+        for (let d = 0; d < 7; d++) html += `<td><button type="button" class="pick-slot" data-key="${d}-${si}" aria-pressed="false" aria-label="${escapeHtml(`${DAYS[d]} ${slot.start} to ${slot.end}`)}"></button></td>`;
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      $('stPickerTable').innerHTML = html;
+      syncPicker();
+      $('stPicker').classList.remove('hidden'); document.body.classList.add('modal-open');
+      $('stPickerModal').scrollTop = 0; $('stPickerModal').focus();
+    }
+    function closeStPicker(apply) {
+      if (!isPickerOpen()) return;
+      if (apply) stDraft.slots = sortSlotKeys([...pickerTemp]);
+      pickerTemp = null;
+      $('stPicker').classList.add('hidden'); document.body.classList.remove('modal-open'); $('stPickerTable').innerHTML = '';
+      renderStForm(); $('stSlotBtn').focus();
+    }
+    $('stSlotBtn').addEventListener('click', openStPicker);
+    $('stPickerDone').addEventListener('click', () => closeStPicker(true));
+    $('stPickerCancel').addEventListener('click', () => closeStPicker(false));
+    $('stPickerTable').addEventListener('click', e => {
+      const b = e.target.closest('.pick-slot'); if (!b || !pickerTemp) return;
+      const k = b.dataset.key; if (pickerTemp.has(k)) pickerTemp.delete(k); else pickerTemp.add(k);
+      syncPicker();
+    });
+    document.addEventListener('keydown', e => {
+      if (!isPickerOpen()) return;
+      if (e.key === 'Escape') { e.preventDefault(); closeStPicker(false); return; }
+      if (e.key === 'Tab') { // keep keyboard focus inside the pop-up
+        const f = [...$('stPickerModal').querySelectorAll('button')]; if (!f.length) return;
+        const first = f[0], last = f[f.length - 1], active = document.activeElement;
+        if (e.shiftKey && (active === first || active === $('stPickerModal'))) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+    async function exportPng() {
+      if (!hasContent()) return;
+      if (typeof html2canvas === 'undefined') { setStatus('The PNG export library could not be loaded. Check your internet connection and reload the page.', 'error'); return; }
+      const btn = $('exportBtn'), label = btn.textContent; btn.disabled = true; btn.textContent = 'Rendering…';
+      try {
+        if (document.fonts && document.fonts.ready) await document.fonts.ready;
+        const el = $('exportArea');
+        const canvas = await html2canvas(el, {
+          scale: Math.max(2, window.devicePixelRatio || 1), backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#ffffff', useCORS: true, logging: false,
+          onclone: (doc, node) => {
+            node.classList.add('exporting');
+            node.style.width = Math.max(el.offsetWidth, 1160) + 'px';
+            node.style.padding = '12px';
+            const tw = node.querySelector('.table-wrap'); if (tw) tw.style.overflow = 'visible';
+          }
+        });
+        const sem = String(feed?.metadata?.currentSemester || 'routine').replace(/[^\w-]+/g, '-').toLowerCase();
+        canvas.toBlob(blob => {
+          if (!blob) { setStatus('Could not create the PNG.', 'error'); return; }
+          const url = URL.createObjectURL(blob), a = document.createElement('a');
+          a.href = url; a.download = `bracu-routine-${sem}.png`; document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+          setStatus('Routine PNG downloaded.', 'ok');
+        }, 'image/png');
+      } catch (err) { setStatus(`PNG export failed: ${err.message}`, 'error'); }
+      finally { btn.textContent = label; btn.disabled = !hasContent(); }
+    }
+    $('exportBtn').addEventListener('click', exportPng);
+    // ---- Colour theme: <html data-theme> selects one of the token blocks in the stylesheet ----
+    const THEME_KEY = 'bracu-routine-generator-theme-v1';
+    const DEFAULT_THEME = 'antique';
+    function applyTheme(id, save = false) {
+      const buttons = [...document.querySelectorAll('[data-theme-id]')];
+      if (!buttons.some(b => b.dataset.themeId === id)) id = DEFAULT_THEME;
+      document.documentElement.dataset.theme = id;
+      buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeId === id)));
+      if (save) { try { localStorage.setItem(THEME_KEY, id); } catch { } }
+    }
+    document.querySelector('.theme-switch').addEventListener('click', e => { const b = e.target.closest('[data-theme-id]'); if (b) applyTheme(b.dataset.themeId, true); });
+    applyTheme(document.documentElement.dataset.theme);
+    fetchFeed();
+  </script>
+</body>
+</html>
