@@ -6,7 +6,7 @@
 
 A clean, downloadable class routine for BRAC University, built around the courses and sections you take.
 
-<a href="https://ziswhyzis.github.io/prettyroutine/" target="_blank" rel="noopener noreferrer">**PrettyRoutine**</a>
+<a href="https://ziswhyzis.github.io/prettyroutine/" target="_blank" rel="noopener noreferrer">**✨Open PrettyRoutine Website✨**</a>
 
 </div>
 
