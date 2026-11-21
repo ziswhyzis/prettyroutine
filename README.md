@@ -4,7 +4,7 @@
 
 **Your semester, at a glance.**
 
-A clean, shareable class routine for BRAC University—built around the courses and sections you take.
+A clean, downloadable class routine for BRAC University, built around the courses and sections you take.
 
 [**Open PrettyRoutine ↗**](https://ziswhyzis.github.io/prettyroutine/)
 
@@ -53,3 +53,6 @@ Open [localhost:8000](http://localhost:8000) in your browser.
 ## Notes
 
 Routine data comes from the [BRACU Connect data feed](https://usis-cdn.eniamza.com/connect-migrate.json). The available information may change or be incomplete, so double-check details when needed.
+
+
+### *feedbacks are much appreciated*
