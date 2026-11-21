@@ -14,13 +14,13 @@ A clean, downloadable class routine for BRAC University, built around the course
 
 ## What it's for
 
-No more piecing your routine together from different places. Select your courses and sections, and PrettyRoutine fills in the relevant class details—faculty, rooms, weekly schedule, and available midterm and final exam information.
+No more piecing your routine together from different places or **having an ugly routine saved**. After confirming advising, select your courses and sections, and PrettyRoutine fills in the relevant class details—faculty, rooms, weekly schedule, and available midterm and final exam information.
 
 
 ## Made for
 
 **Students**  
-Build your semester timetable, check for clashes, keep exam dates close, and export it as an image to save on your phone or print.
+Build your semester timetable, keep exam dates close, and export it as an image to save on your phone or print. ✨
 
 
 **Student Tutors (STs)**  
