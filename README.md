@@ -34,7 +34,7 @@ Add the courses you tutor and set your consultation hours. Your ST slots appear 
 - Weekly timetable with clash highlighting
 - Optional ST courses and consultation slots
 - PNG export for saving, sharing, or printing
-- Themes, with preferences saved in your browser
+- Four visual themes to match your taste
 
 
 ## Run locally
